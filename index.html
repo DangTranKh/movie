@@ -1623,27 +1623,38 @@
     }
 
     xhr.onreadystatechange = function() {
-      var data, film, episodes, items, i, ep;
+      var data, film, episodes, serverList, s, items, i, ep, serverName, epTitle;
       if (xhr.readyState !== 4) return;
 
       if (xhr.status === 200) {
         try {
           data = JSON.parse(xhr.responseText);
 
-          // Cấu trúc chuẩn NguonC: data.movie mới chứa name, poster_url và episodes
           film = data.movie || data.film || {};
-
           episodes = [];
-          // FIX CHÍ MẠNG: Phải kiểm tra film.episodes (data.movie.episodes)
-          if (film.episodes && film.episodes.length > 0 &&
-              film.episodes[0].items && film.episodes[0].items.length > 0) {
-            items = film.episodes[0].items;
-            for (i = 0; i < items.length; i++) {
-              ep = items[i];
-              episodes.push({
-                name:       ep.name       ? ('Tập ' + ep.name) : ('Tập ' + (i + 1)),
-                link_embed: ep.embed      || ep.link_embed || ''
-              });
+
+          // SỬA Ở ĐÂY: Duyệt qua TOÀN BỘ các Server (Vietsub, Lồng Tiếng,...)
+          if (film.episodes && film.episodes.length > 0) {
+            serverList = film.episodes;
+            
+            for (s = 0; s < serverList.length; s++) {
+              serverName = serverList[s].server_name || ('Server ' + (s + 1));
+              items = serverList[s].items || [];
+
+              for (i = 0; i < items.length; i++) {
+                ep = items[i];
+                // Nếu phim có từ 2 Server trở lên (Vietsub + Lồng Tiếng), gắn thêm tên Server vào nút bấm
+                if (serverList.length > 1) {
+                  epTitle = 'Tập ' + ep.name + ' (' + serverName + ')';
+                } else {
+                  epTitle = 'Tập ' + ep.name;
+                }
+
+                episodes.push({
+                  name:       epTitle,
+                  link_embed: ep.embed || ep.link_embed || ''
+                });
+              }
             }
           }
 
