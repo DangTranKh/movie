@@ -1615,16 +1615,8 @@
     var xhr, url;
     url = 'https://phim.nguonc.com/api/film/' + slug;
 
-    /* Tao XHR - tuong thich IE cua Smart TV cu */
     if (window.XMLHttpRequest) {
       xhr = new XMLHttpRequest();
-    } else if (window.ActiveXObject) {
-      /* IE6 fallback - rat hiem tren TV nhung cu the */
-      try { xhr = new window.ActiveXObject('Msxml2.XMLHTTP'); }
-      catch (e1) {
-        try { xhr = new window.ActiveXObject('Microsoft.XMLHTTP'); }
-        catch (e2) { callback(null, slugIdx); return; }
-      }
     } else {
       callback(null, slugIdx);
       return;
@@ -1638,69 +1630,43 @@
         try {
           data = JSON.parse(xhr.responseText);
 
-          /* Cau truc API NguonC:
-             data.movie.name, data.movie.original_name,
-             data.movie.thumb_url, data.movie.year,
-             data.episodes[0].items[] => { name, embed }
-          */
-          film = data.movie || data.film || data;
+          // Cấu trúc chuẩn NguonC: data.movie mới chứa name, poster_url và episodes
+          film = data.movie || data.film || {};
 
-          /* Giai ma danh sach tap tu episodes[0].items */
           episodes = [];
-          if (data.episodes && data.episodes.length > 0 &&
-              data.episodes[0].items && data.episodes[0].items.length > 0) {
-            items = data.episodes[0].items;
+          // FIX CHÍ MẠNG: Phải kiểm tra film.episodes (data.movie.episodes)
+          if (film.episodes && film.episodes.length > 0 &&
+              film.episodes[0].items && film.episodes[0].items.length > 0) {
+            items = film.episodes[0].items;
             for (i = 0; i < items.length; i++) {
               ep = items[i];
               episodes.push({
-                name:       ep.name       || ('Tap ' + (i + 1)),
+                name:       ep.name       ? ('Tập ' + ep.name) : ('Tập ' + (i + 1)),
                 link_embed: ep.embed      || ep.link_embed || ''
               });
             }
           }
 
-          /* Tao doi tuong phim theo cau truc MY_MOVIES */
           callback({
             name:        film.name          || slug,
             origin_name: film.original_name || film.origin_name || '',
             year:        film.year          ? String(film.year) : '',
-            thumb_url:   film.thumb_url     || film.poster_url  || '',
+            thumb_url:   film.poster_url    || film.thumb_url   || '',
             slug:        slug,
             episodes:    episodes
           }, slugIdx);
 
         } catch (parseErr) {
-          /* JSON khong hop le */
-          if (window.console && console.warn) {
-            console.warn('CinemaX: Loi parse JSON cho slug "' + slug + '":', parseErr);
-          }
           callback(null, slugIdx);
         }
       } else {
-        /* HTTP error (404, 500, ...) */
-        if (window.console && console.warn) {
-          console.warn('CinemaX: API tra ve HTTP ' + xhr.status + ' cho slug "' + slug + '"');
-        }
         callback(null, slugIdx);
       }
     };
 
-    /* Xu ly loi mang (timeout, offline, ...) */
-    xhr.onerror = function() {
-      if (window.console && console.warn) {
-        console.warn('CinemaX: Loi mang khi fetch slug "' + slug + '"');
-      }
-      callback(null, slugIdx);
-    };
-
-    /* Dat timeout 15 giay - TV doi khi mang cham */
+    xhr.onerror = function() { callback(null, slugIdx); };
     xhr.timeout = 15000;
-    xhr.ontimeout = function() {
-      if (window.console && console.warn) {
-        console.warn('CinemaX: Timeout khi fetch slug "' + slug + '"');
-      }
-      callback(null, slugIdx);
-    };
+    xhr.ontimeout = function() { callback(null, slugIdx); };
 
     xhr.open('GET', url, true);
     xhr.setRequestHeader('Accept', 'application/json');
