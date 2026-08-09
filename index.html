@@ -1,0 +1,1864 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CinemaX – Xem Phim</title>
+  <meta name="description" content="Xem phim online giao dien toi phong cach Netflix, tuong thich Smart TV.">
+
+  <!--
+    NOTE: Google Fonts dung HTTP request - neu TV khong co mang se fallback ve Arial.
+    Hoan toan an toan.
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================================
+       RESET - Tuong thich toi da voi WebKit cu
+       ========================================================== */
+    * {
+      margin: 0;
+      padding: 0;
+      -webkit-box-sizing: border-box;
+         -moz-box-sizing: border-box;
+              box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden; /* TV khong can scroll trang, chi scroll trong panel */
+    }
+
+    body {
+      font-family: 'Inter', Arial, Helvetica, sans-serif;
+      background: #141414;
+      color: #ffffff;
+      font-size: 14px;
+    }
+
+    /* Scrollbar tuy chinh cho WebKit */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #141414; }
+    ::-webkit-scrollbar-thumb {
+      background: #3a3a3a;
+      -webkit-border-radius: 2px;
+              border-radius: 2px;
+    }
+
+    a { text-decoration: none; color: inherit; }
+    button { cursor: pointer; }
+
+    /* ==========================================================
+       HEADER - Dung position: fixed de tuong thich TV
+       ========================================================== */
+    #header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 62px;
+      background: #141414;
+      border-bottom: 1px solid #2e2e2e;
+      z-index: 999;
+
+      /* Flexbox voi day du prefix cho WebKit cu (2012-2015) */
+      display: -webkit-box;
+      display: -webkit-flex;
+      display:         flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+              align-items: center;
+      padding: 0 18px;
+      gap: 14px; /* gap ho tro tu WebKit 534+ */
+    }
+
+    /* Logo */
+    .logo {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display:         flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+              align-items: center;
+      -webkit-flex-shrink: 0;
+              flex-shrink: 0;
+    }
+
+    .logo-icon {
+      width: 34px;
+      height: 34px;
+      background: #e50914;
+      -webkit-border-radius: 6px;
+              border-radius: 6px;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display:         flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+              align-items: center;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+              justify-content: center;
+      font-size: 17px;
+      font-weight: 800;
+      color: #fff;
+      margin-right: 9px;
+      /* Box shadow - fallback an toan */
+      -webkit-box-shadow: 0 0 16px rgba(229,9,20,0.50);
+              box-shadow: 0 0 16px rgba(229,9,20,0.50);
+    }
+
+    .logo-text {
+      font-size: 20px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+    }
+    .logo-text .accent { color: #e50914; }
+
+    /* Thanh tim kiem */
+    .search-wrap {
+      -webkit-flex: 1;
+              flex: 1;
+      max-width: 440px;
+      position: relative;
+    }
+
+    .search-ico {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      -webkit-transform: translateY(-50%);
+          -ms-transform: translateY(-50%);
+              transform: translateY(-50%);
+      color: #737373;
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    #searchInput {
+      width: 100%;
+      padding: 10px 38px 10px 40px;
+      background: #252525;
+      border: 1.5px solid #2e2e2e;
+      -webkit-border-radius: 50px;
+              border-radius: 50px;
+      color: #ffffff;
+      font-family: 'Inter', Arial, sans-serif;
+      font-size: 13px;
+      outline: none;
+      -webkit-transition: border-color 0.2s;
+              transition: border-color 0.2s;
+    }
+    #searchInput:focus {
+      border-color: #e50914;
+      -webkit-box-shadow: 0 0 0 3px rgba(229,9,20,0.16);
+              box-shadow: 0 0 0 3px rgba(229,9,20,0.16);
+    }
+    #searchInput::-webkit-input-placeholder { color: #737373; }
+    #searchInput::-moz-placeholder { color: #737373; }
+
+    #btnClear {
+      position: absolute;
+      right: 11px;
+      top: 50%;
+      -webkit-transform: translateY(-50%);
+              transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #737373;
+      padding: 4px;
+      font-size: 14px;
+      display: none;
+      line-height: 1;
+    }
+    #btnClear:hover { color: #ffffff; }
+
+    /* Tag trang thai */
+    .header-tag {
+      font-size: 11px;
+      background: rgba(229,9,20,0.14);
+      border: 1px solid rgba(229,9,20,0.30);
+      color: #ff6b6b;
+      padding: 4px 10px;
+      -webkit-border-radius: 20px;
+              border-radius: 20px;
+      font-weight: 700;
+      white-space: nowrap;
+      -webkit-flex-shrink: 0;
+              flex-shrink: 0;
+    }
+
+    /* Phan vung cam Remote TV */
+    #tvZoneLabel {
+      font-size: 11px;
+      color: #737373;
+      -webkit-flex-shrink: 0;
+              flex-shrink: 0;
+      white-space: nowrap;
+      margin-left: auto; /* day sang phai */
+    }
+
+    /* ==========================================================
+       SIDEBAR TRAI - Danh sach phim
+       Dung position: fixed + chieu rong co dinh
+       ========================================================== */
+    #sidebar {
+      position: fixed;
+      top: 62px;
+      left: 0;
+      bottom: 34px; /* de cho nav hint */
+      width: 320px;
+      background: #1c1c1c;
+      border-right: 1px solid #2e2e2e;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    /* Header sidebar */
+    .sb-head {
+      padding: 12px 13px 10px;
+      border-bottom: 1px solid #2e2e2e;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display:         flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+              align-items: center;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+              justify-content: space-between;
+      position: -webkit-sticky;
+      position: sticky;
+      top: 0;
+      background: #1c1c1c;
+      z-index: 10;
+    }
+
+    .sb-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #737373;
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+    }
+
+    #listCount {
+      font-size: 11px;
+      color: #737373;
+      background: #252525;
+      padding: 2px 8px;
+      -webkit-border-radius: 12px;
+              border-radius: 12px;
+    }
+
+    /* Container cac card */
+    #movieList { padding: 6px; }
+
+    /* ==========================================================
+       CARD PHIM - Dung Flexbox, khong dung Grid
+       ========================================================== */
+    .movie-card {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display:         flex;
+      -webkit-box-align: flex-start;
+      -webkit-align-items: flex-start;
+              align-items: flex-start;
+      padding: 9px;
+      -webkit-border-radius: 8px;
+              border-radius: 8px;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+      margin-bottom: 5px;
+      -webkit-transition: background 0.2s, border-color 0.2s;
+              transition: background 0.2s, border-color 0.2s;
+      position: relative;
+    }
+
+    .movie-card.active {
+      background: #252525;
+      border-color: #e50914;
+    }
+
+    /* ==== CLASS FOCUS CHO TV REMOTE - QUAN TRONG NHAT ==== */
+    /* Vien sang ro rang, de nhin tren man hinh TV lon */
+    .tv-focus {
+      outline: none !important;
+      border-color: #ffcc00 !important; /* vang sang de nhin tren TV */
+      background: #2a2a2a !important;
+      -webkit-box-shadow: 0 0 0 3px rgba(255,204,0,0.55),
+                          0 0 20px rgba(255,204,0,0.25) !important;
+              box-shadow: 0 0 0 3px rgba(255,204,0,0.55),
+                          0 0 20px rgba(255,204,0,0.25) !important;
+    }
+
+    /* Thumbnail placeholder khi khong co anh */
+    .thumb-placeholder {
+      width: 62px;
+      height: 88px;
+      -webkit-border-radius: 5px;
+              border-radius: 5px;
+      background: #282828;
+      border: 1px solid #2e2e2e;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display:         flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+              align-items: center;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+              justify-content: center;
+      font-size: 22px;
+      -webkit-flex-shrink: 0;
+              flex-shrink: 0;
+    }
+
+    .card-thumb {
+      width: 62px;
+      height: 88px;
+      object-fit: cover;
+      -webkit-border-radius: 5px;
+              border-radius: 5px;
+      -webkit-flex-shrink: 0;
+              flex-shrink: 0;
+      border: 1px solid #2e2e2e;
+      background: #141414;
+    }
+
+    .card-body {
+      -webkit-flex: 1;
+              flex: 1;
+      min-width: 0;
+      padding-left: 10px;
+    }
+
+    .card-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+      line-height: 1.4;
+      overflow: hidden;
+      /* WebKit line-clamp: ho tro rong rai tren tat ca WebKit */
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .card-origin {
+      font-size: 11px;
+      color: #737373;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 4px;
+    }
+
+    .card-meta { margin-top: 6px; }
+
+    /* Badge nho */
+    .badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      -webkit-border-radius: 4px;
+              border-radius: 4px;
+      margin-right: 4px;
+    }
+    .b-year { background: rgba(255,255,255,0.07); color: #b3b3b3; }
+    .b-eps  {
+      background: rgba(16,185,129,0.14);
+      color: #6ee7b7;
+      border: 1px solid rgba(16,185,129,0.28);
+    }
+
+    /* Trang thai trong sidebar */
+    .state-box {
+      padding: 40px 14px;
+      text-align: center;
+      color: #737373;
+    }
+    .state-box .emo { font-size: 36px; margin-bottom: 10px; }
+    .state-box .ttl {
+      font-size: 13px;
+      font-weight: 700;
+      color: #b3b3b3;
+      margin-bottom: 6px;
+    }
+    .state-box .sub { font-size: 12px; line-height: 1.6; }
+
+    /* ==========================================================
+       PANEL PHAI - Trinh phat iframe
+       Dung position: fixed, left = chieu rong sidebar
+       ========================================================== */
+    #playerPanel {
+      position: fixed;
+      top: 62px;
+      left: 320px; /* bang chieu rong sidebar */
+      right: 0;
+      bottom: 34px; /* de cho nav hint */
+      background: #0d0d0d;
+      overflow: hidden;
+    }
+
+    /* Vung video - chieu cao duoc tinh bang JS */
+    #videoWrap {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      /* height set boi JS theo ty le 16:9 */
+      background: #000000;
+      overflow: hidden;
+    }
+
+    /* Man hinh cho truoc khi chon phim */
+    #placeholder {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #0a0a0a;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display:         flex;
+      -webkit-box-orient: vertical;
+      -webkit-flex-direction: column;
+              flex-direction: column;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+              align-items: center;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+              justify-content: center;
+      z-index: 2;
+    }
+
+    .ph-ring {
+      width: 82px;
+      height: 82px;
+      -webkit-border-radius: 50%;
+              border-radius: 50%;
+      border: 2px solid rgba(229,9,20,0.30);
+      background: rgba(229,9,20,0.08);
+      display: -webkit-box;
+      display: -webkit-flex;
+      display:         flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+              align-items: center;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+              justify-content: center;
+      font-size: 36px;
+      margin-bottom: 18px;
+      -webkit-animation: glowPulse 2.8s ease-in-out infinite;
+              animation: glowPulse 2.8s ease-in-out infinite;
+    }
+
+    @-webkit-keyframes glowPulse {
+      0%, 100% {
+        -webkit-box-shadow: 0 0 0 0 rgba(229,9,20,0.3);
+                box-shadow: 0 0 0 0 rgba(229,9,20,0.3);
+      }
+      50% {
+        -webkit-box-shadow: 0 0 0 20px rgba(229,9,20,0);
+                box-shadow: 0 0 0 20px rgba(229,9,20,0);
+      }
+    }
+    @keyframes glowPulse {
+      0%, 100% {
+        -webkit-box-shadow: 0 0 0 0 rgba(229,9,20,0.3);
+                box-shadow: 0 0 0 0 rgba(229,9,20,0.3);
+      }
+      50% {
+        -webkit-box-shadow: 0 0 0 20px rgba(229,9,20,0);
+                box-shadow: 0 0 0 20px rgba(229,9,20,0);
+      }
+    }
+
+    .ph-text { text-align: center; }
+    .ph-text h2 { font-size: 19px; font-weight: 700; margin-bottom: 8px; }
+    .ph-text p  { font-size: 13px; color: #737373; }
+
+    /* iFrame player - hien khi chon phim */
+    #iframePlayer {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      border: none;
+      display: none; /* an ban dau */
+      z-index: 1;
+    }
+
+    /* ==========================================================
+       PANEL THONG TIN & TAP PHIM
+       Dung position: absolute, top set boi JS, bottom: 0
+       ========================================================== */
+    #infoPanel {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      /* top set boi JS */
+      overflow-y: auto;
+      padding: 14px 18px 14px 18px;
+    }
+
+    /* Trang thai chua chon phim */
+    #infoPlaceholder {
+      padding: 30px 14px;
+      text-align: center;
+      color: #737373;
+    }
+    #infoPlaceholder .emo { font-size: 28px; margin-bottom: 9px; }
+    #infoPlaceholder p {
+      font-size: 13px;
+      color: #b3b3b3;
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+    #infoPlaceholder small { font-size: 12px; }
+
+    /* Chi tiet phim (an ban dau, hien sau khi chon) */
+    #movieDetail { display: none; }
+
+    /* Thanh now playing */
+    #nowPlayingBar {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display:         flex;
+      -webkit-box-align: flex-start;
+      -webkit-align-items: flex-start;
+              align-items: flex-start;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+              justify-content: space-between;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #2e2e2e;
+    }
+
+    #npTitle {
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.3;
+      color: #ffffff;
+    }
+
+    #npEpisode {
+      font-size: 12px;
+      color: #e50914;
+      margin-top: 5px;
+      font-weight: 600;
+    }
+
+    .live-pill {
+      -webkit-flex-shrink: 0;
+              flex-shrink: 0;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display:         flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+              align-items: center;
+      background: rgba(229,9,20,0.12);
+      border: 1px solid rgba(229,9,20,0.30);
+      color: #ff6b6b;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 11px;
+      -webkit-border-radius: 20px;
+              border-radius: 20px;
+    }
+
+    .live-dot {
+      width: 7px; height: 7px;
+      background: #e50914;
+      -webkit-border-radius: 50%;
+              border-radius: 50%;
+      margin-right: 6px;
+      -webkit-animation: blink 1.3s ease-in-out infinite;
+              animation: blink 1.3s ease-in-out infinite;
+    }
+
+    @-webkit-keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.15; }
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.15; }
+    }
+
+    /* Header tap phim */
+    .eps-head {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display:         flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+              align-items: center;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+              justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .eps-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #737373;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    #epCount {
+      font-size: 11px;
+      color: #737373;
+      background: #1c1c1c;
+      padding: 3px 8px;
+      -webkit-border-radius: 10px;
+              border-radius: 10px;
+    }
+
+    /* ==========================================================
+       LUOI CAC NUT TAP PHIM
+       Dung display: inline-block thay vi CSS Grid
+       ========================================================== */
+    #episodeGrid {
+      /* Cac nut se tu dong xep hang do inline-block + wrap */
+      font-size: 0; /* xoa khoang trang giua inline-block */
+    }
+
+    .ep-btn {
+      display: inline-block;
+      font-size: 12px; /* dat lai font-size sau khi reset o parent */
+      vertical-align: top;
+      width: 70px;
+      padding: 8px 5px;
+      margin: 0 6px 7px 0;
+      background: #1c1c1c;
+      border: 1.5px solid #2e2e2e;
+      -webkit-border-radius: 6px;
+              border-radius: 6px;
+      color: #b3b3b3;
+      font-family: 'Inter', Arial, sans-serif;
+      font-weight: 500;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      -webkit-transition: background 0.2s, border-color 0.2s, color 0.2s;
+              transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+
+    .ep-btn.active {
+      background: #e50914;
+      border-color: #e50914;
+      color: #ffffff;
+      font-weight: 700;
+      -webkit-box-shadow: 0 4px 14px rgba(229,9,20,0.38);
+              box-shadow: 0 4px 14px rgba(229,9,20,0.38);
+    }
+
+    /* Focus vang tuong phan khi dieu huong bang Remote */
+    .ep-btn.tv-focus {
+      border-color: #ffcc00 !important;
+      background: #2a2a2a !important;
+      color: #ffffff !important;
+      -webkit-box-shadow: 0 0 0 3px rgba(255,204,0,0.55),
+                          0 0 16px rgba(255,204,0,0.25) !important;
+              box-shadow: 0 0 0 3px rgba(255,204,0,0.55),
+                          0 0 16px rgba(255,204,0,0.25) !important;
+    }
+
+    .ep-btn.active.tv-focus {
+      background: #ff1a1a !important;
+    }
+
+    /* ==========================================================
+       THANH HUONG DAN DIEU HUONG REMOTE TV
+       Hien thi duoi cung man hinh
+       ========================================================== */
+    #navBar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 34px;
+      background: #0f0f0f;
+      border-top: 1px solid #2e2e2e;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display:         flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+              align-items: center;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+              justify-content: center;
+      z-index: 998;
+    }
+
+    .nav-item {
+      display: inline-block;
+      font-size: 11px;
+      color: #737373;
+      margin: 0 12px;
+    }
+
+    .nav-key {
+      display: inline-block;
+      background: #252525;
+      border: 1px solid #3a3a3a;
+      color: #b3b3b3;
+      padding: 1px 6px;
+      -webkit-border-radius: 3px;
+              border-radius: 3px;
+      font-size: 10px;
+      font-weight: 700;
+      margin-right: 3px;
+    }
+
+    /* Vung dang focus (label dong tren header) */
+    #tvZoneLabel {
+      font-size: 11px;
+      padding: 3px 10px;
+      -webkit-border-radius: 12px;
+              border-radius: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .zone-list     { background: rgba(59,130,246,0.18); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+    .zone-episodes { background: rgba(229,9,20,0.18);   color: #ff8080; border: 1px solid rgba(229,9,20,0.3); }
+
+    /* ==========================================================
+       TOAST THONG BAO
+       ========================================================== */
+    #toast {
+      position: fixed;
+      bottom: 46px;
+      right: 20px;
+      background: #252525;
+      border: 1px solid #2e2e2e;
+      border-left: 3px solid #e50914;
+      color: #ffffff;
+      padding: 10px 15px;
+      -webkit-border-radius: 8px;
+              border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      -webkit-box-shadow: 0 6px 24px rgba(0,0,0,0.7);
+              box-shadow: 0 6px 24px rgba(0,0,0,0.7);
+      z-index: 9999;
+      max-width: 280px;
+      opacity: 0;
+      -webkit-transform: translateX(40px);
+          -ms-transform: translateX(40px);
+              transform: translateX(40px);
+      -webkit-transition: opacity 0.28s, -webkit-transform 0.28s;
+              transition: opacity 0.28s, transform 0.28s;
+    }
+
+    #toast.show {
+      opacity: 1;
+      -webkit-transform: translateX(0);
+          -ms-transform: translateX(0);
+              transform: translateX(0);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===========================================================
+     HEADER
+     =========================================================== -->
+<header id="header">
+
+  <div class="logo">
+    <div class="logo-icon">C</div>
+    <span class="logo-text">Cinema<span class="accent">X</span></span>
+  </div>
+
+  <div class="search-wrap">
+    <span class="search-ico">&#128269;</span>
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="Tim kiem phim..."
+      autocomplete="off"
+      spellcheck="false"
+    >
+    <button id="btnClear">&#10005;</button>
+  </div>
+
+  <span class="header-tag">&#128194; Offline</span>
+
+  <!-- Hien thi vung dieu huong hien tai (cap nhat bang JS) -->
+  <span id="tvZoneLabel" class="zone-list">&#127918; Danh sach phim</span>
+
+</header>
+
+<!-- ===========================================================
+     SIDEBAR TRAI: DANH SACH PHIM
+     =========================================================== -->
+<aside id="sidebar">
+  <div class="sb-head">
+    <span class="sb-title" id="sbTitle">Danh sach phim</span>
+    <span id="listCount"></span>
+  </div>
+  <div id="movieList">
+    <!-- Cac card phim duoc inject boi renderList() -->
+  </div>
+</aside>
+
+<!-- ===========================================================
+     PANEL PHAI: TRINH PHAT VIDEO
+     =========================================================== -->
+<main id="playerPanel">
+
+  <!-- Vung video / iframe -->
+  <div id="videoWrap">
+    <!-- Man hinh cho (placeholder) -->
+    <div id="placeholder">
+      <div class="ph-ring">&#9654;</div>
+      <div class="ph-text">
+        <h2>Chao mung den CinemaX</h2>
+        <p>Chon mot bo phim de bat dau xem</p>
+      </div>
+    </div>
+
+    <!--
+      iFrame Player:
+      - src duoc thay doi bang JS khi click tap phim
+      - Khong can HLS.js hay bat ky thu vien nao
+      - Hoat dong tren moi trinh duyet (ke ca TV cu)
+    -->
+    <iframe
+      id="iframePlayer"
+      allowfullscreen="allowfullscreen"
+      scrolling="no"
+      allow="autoplay; encrypted-media"
+      referrerpolicy="no-referrer"
+    ></iframe>
+  </div>
+
+  <!-- Panel thong tin phim & danh sach tap -->
+  <div id="infoPanel">
+
+    <!-- Chua chon phim -->
+    <div id="infoPlaceholder">
+      <div class="emo">&#127917;</div>
+      <p>Chua co phim nao duoc chon</p>
+      <small>Nhan phim mui ten va OK tren Remote de chon phim</small>
+    </div>
+
+    <!-- Da chon phim (an ban dau, hien sau khi chon) -->
+    <div id="movieDetail">
+      <div id="nowPlayingBar">
+        <div>
+          <div id="npTitle"></div>
+          <div id="npEpisode"></div>
+        </div>
+        <div class="live-pill">
+          <div class="live-dot"></div>
+          DANG PHAT
+        </div>
+      </div>
+
+      <div class="eps-head">
+        <span class="eps-label">&#128203; Danh sach tap</span>
+        <span id="epCount"></span>
+      </div>
+
+      <!-- Luoi cac nut tap - dung inline-block, KHONG dung CSS Grid -->
+      <div id="episodeGrid">
+        <!-- Cac nut tap duoc inject boi renderEpisodes() -->
+      </div>
+    </div>
+
+  </div><!-- /infoPanel -->
+
+</main><!-- /playerPanel -->
+
+<!-- ===========================================================
+     THANH DIEU HUONG REMOTE (duoi cung)
+     =========================================================== -->
+<div id="navBar">
+  <span class="nav-item"><span class="nav-key">&#8593;&#8595;</span>Chon phim</span>
+  <span class="nav-item"><span class="nav-key">OK</span>Phat / Chon</span>
+  <span class="nav-item"><span class="nav-key">&#8594;</span>Sang tap phim</span>
+  <span class="nav-item"><span class="nav-key">&#8592;</span>Quay lai</span>
+  <span class="nav-item"><span class="nav-key">BACK</span>Quay lai</span>
+</div>
+
+<!-- Toast thong bao -->
+<div id="toast"></div>
+
+
+<!-- ===========================================================
+     JAVASCRIPT - CHUAN ES5 THUAN TUY
+     Khong dung: const, let, arrow function, template literal,
+                 destructuring, spread operator, CSS Grid
+     =========================================================== -->
+<script>
+
+  /* ===========================================================
+     ██████████████████████████████████████████████████████
+     ██  DANH SACH SLUG PHIM CA NHAN - CHINH SUA O DAY  ██
+     ██████████████████████████████████████████████████████
+
+     Them slug cua phim ban muon xem vao mang nay.
+     Slug la phan cuoi cua URL phim tren NguonC, vi du:
+       https://phim.nguonc.com/phim/keo-ngot-tinh-yeu
+       => slug la: "keo-ngot-tinh-yeu"
+
+     Ung dung se tu dong goi API:
+       https://phim.nguonc.com/api/film/{slug}
+     va hien thi phim do len sidebar.
+     =========================================================== */
+  var MY_FAVORITE_SLUGS = [
+    "keo-ngot-tinh-yeu"
+    /* Dan them slug cua phim khac vao day, cach nhau bang dau phay:
+       ,"ten-phim-khac"
+       ,"ten-phim-thu-3"
+    */
+  ];
+
+  /* ===========================================================
+     MANG PHIM DUOC LOAD DONG TU API
+     Khong chinh sua tay - duoc populate boi fetchAllMovies()
+     =========================================================== */
+  var MY_MOVIES = [];
+
+  /* ===========================================================
+     TRANG THAI UNG DUNG (Application State)
+     Theo doi trang thai hien tai cua ung dung
+     =========================================================== */
+  var state = {
+    activeMovieIndex: -1,   /* Index phim dang chon trong MY_MOVIES */
+    activeEpIndex: -1,      /* Index tap dang phat */
+    searchQuery: '',        /* Tu khoa tim kiem hien tai */
+    filteredList: [],       /* Mang phan tu {movie, origIndex} sau loc */
+    loadedCount: 0,         /* So slug da fetch xong (thanh cong + that bai) */
+    totalSlugs: 0           /* Tong so slug can fetch */
+  };
+
+  /* ===========================================================
+     TRANG THAI DIEU HUONG REMOTE TV (TV Remote Navigation State)
+     Quan ly vi tri focus hien tai khi nguoi dung bam phim mui ten
+     =========================================================== */
+  var nav = {
+    zone: 'list',       /* 'list' = dang o danh sach phim, 'episodes' = dang o tap phim */
+    listFocusIdx: 0,    /* Index card dang focus trong filteredList */
+    epFocusIdx: 0       /* Index nut tap dang focus */
+  };
+
+  /* ===========================================================
+     THAM CHIEU DOM - Lay mot lan, tai su dung nhieu lan
+     Tranh goi getElementById nhieu lan lam cham TV cu
+     =========================================================== */
+  var DOM = {
+    header:        document.getElementById('header'),
+    sidebar:       document.getElementById('sidebar'),
+    playerPanel:   document.getElementById('playerPanel'),
+    videoWrap:     document.getElementById('videoWrap'),
+    iframePlayer:  document.getElementById('iframePlayer'),
+    placeholder:   document.getElementById('placeholder'),
+    infoPanel:     document.getElementById('infoPanel'),
+    infoPlaceholder: document.getElementById('infoPlaceholder'),
+    movieDetail:   document.getElementById('movieDetail'),
+    movieList:     document.getElementById('movieList'),
+    sbTitle:       document.getElementById('sbTitle'),
+    listCount:     document.getElementById('listCount'),
+    npTitle:       document.getElementById('npTitle'),
+    npEpisode:     document.getElementById('npEpisode'),
+    episodeGrid:   document.getElementById('episodeGrid'),
+    epCount:       document.getElementById('epCount'),
+    searchInput:   document.getElementById('searchInput'),
+    btnClear:      document.getElementById('btnClear'),
+    tvZoneLabel:   document.getElementById('tvZoneLabel'),
+    toast:         document.getElementById('toast')
+  };
+
+  /* ===========================================================
+     CAC HAM TIEN ICH (Utility Functions)
+     Viet theo ES5, thay the classList de tuong thich TV cu
+     =========================================================== */
+
+  /**
+   * Kiem tra phan tu co class cu the khong.
+   * An toan hon classList.contains tren trinh duyet cu.
+   */
+  function hasClass(el, cls) {
+    return (' ' + el.className + ' ').indexOf(' ' + cls + ' ') !== -1;
+  }
+
+  /**
+   * Them class vao phan tu (neu chua co).
+   */
+  function addClass(el, cls) {
+    if (!hasClass(el, cls)) {
+      el.className = el.className ? (el.className + ' ' + cls) : cls;
+    }
+  }
+
+  /**
+   * Xoa class khoi phan tu.
+   * Dung RegExp de xu ly ca khoang trang xung quanh.
+   */
+  function removeClass(el, cls) {
+    el.className = (' ' + el.className + ' ')
+      .replace(new RegExp(' ' + cls + ' ', 'g'), ' ')
+      .replace(/^\s+|\s+$/g, '');
+  }
+
+  /**
+   * Hien thi toast thong bao ngan.
+   * @param {string} msg      - Noi dung can hien
+   * @param {number} duration - Thoi gian hien (ms), mac dinh 2800
+   */
+  function showToast(msg, duration) {
+    if (!duration) duration = 2800;
+    DOM.toast.textContent = msg;
+    addClass(DOM.toast, 'show');
+    clearTimeout(DOM.toast._t);
+    DOM.toast._t = setTimeout(function() {
+      removeClass(DOM.toast, 'show');
+    }, duration);
+  }
+
+  /**
+   * Cap nhat label vung dieu huong hien thi o header.
+   * @param {string} zone - 'list' hoac 'episodes'
+   */
+  function updateZoneLabel(zone) {
+    var el = DOM.tvZoneLabel;
+    if (zone === 'list') {
+      el.textContent = '\u{1F3AE} Danh sach phim';
+      el.className = 'zone-list';
+    } else {
+      el.textContent = '\u{1F3AC} Chon tap phim';
+      el.className = 'zone-episodes';
+    }
+  }
+
+  /* ===========================================================
+     TINH TOAN LAYOUT BANG JS
+     Tuong thich voi TV khong ho tro CSS calc() hay aspect-ratio
+     Duoc goi khi trang tai va khi thay doi kich thuoc
+     =========================================================== */
+  function setLayout() {
+    var panelW = DOM.playerPanel.offsetWidth;
+    var panelH = DOM.playerPanel.offsetHeight;
+
+    /* Tinh chieu cao video theo ty le 16:9 */
+    var videoH = Math.round(panelW * 9 / 16);
+
+    /* Gioi han: toi da 60% chieu cao panel de con cho danh sach tap */
+    var maxVideoH = Math.round(panelH * 0.60);
+    if (videoH > maxVideoH) videoH = maxVideoH;
+
+    /* Chieu cao toi thieu cho vung video */
+    if (videoH < 120) videoH = 120;
+
+    /* Ap dung chieu cao cho videoWrap */
+    DOM.videoWrap.style.height = videoH + 'px';
+
+    /* infoPanel bat dau ngay duoi videoWrap */
+    DOM.infoPanel.style.top = videoH + 'px';
+  }
+
+  /* ===========================================================
+     RENDER DANH SACH PHIM VAO SIDEBAR
+     Loc theo tu khoa roi ve cac card phim
+     @param {string} query - Tu khoa tim kiem (da lowercase)
+     =========================================================== */
+  function renderList(query) {
+    var i, m, item, html, thumbHTML, metaHTML, epCnt, isActive;
+
+    /* Tao lai filteredList: loc MY_MOVIES theo query */
+    state.filteredList = [];
+    for (i = 0; i < MY_MOVIES.length; i++) {
+      m = MY_MOVIES[i];
+      if (!query) {
+        state.filteredList.push({ movie: m, origIndex: i });
+      } else {
+        var haystack = ((m.name || '') + ' ' + (m.origin_name || '')).toLowerCase();
+        if (haystack.indexOf(query) !== -1) {
+          state.filteredList.push({ movie: m, origIndex: i });
+        }
+      }
+    }
+
+    /* Cap nhat tieu de sidebar */
+    if (query) {
+      DOM.sbTitle.textContent = 'Ket qua: ' + query;
+    } else {
+      DOM.sbTitle.textContent = 'Danh sach phim';
+    }
+    DOM.listCount.textContent = state.filteredList.length + ' phim';
+
+    /* Truong hop danh sach MY_MOVIES trong */
+    if (MY_MOVIES.length === 0) {
+      DOM.movieList.innerHTML =
+        '<div class="state-box">' +
+          '<div class="emo">&#128194;</div>' +
+          '<div class="ttl">Chua co phim nao</div>' +
+          '<div class="sub">Mo file va them phim vao bien MY_MOVIES trong the &lt;script&gt;</div>' +
+        '</div>';
+      return;
+    }
+
+    /* Truong hop tim kiem khong co ket qua */
+    if (state.filteredList.length === 0) {
+      DOM.movieList.innerHTML =
+        '<div class="state-box">' +
+          '<div class="emo">&#128269;</div>' +
+          '<div class="ttl">Khong tim thay phim</div>' +
+          '<div class="sub">Thu tim voi tu khoa khac</div>' +
+        '</div>';
+      return;
+    }
+
+    /* Ve cac card phim bang cong chuoi (KHONG dung template literal) */
+    html = '';
+    for (i = 0; i < state.filteredList.length; i++) {
+      item = state.filteredList[i];
+      m = item.movie;
+      epCnt = (m.episodes && m.episodes.length) ? m.episodes.length : 0;
+      isActive = (item.origIndex === state.activeMovieIndex);
+
+      /* Thumbnail: dung anh neu co, fallback emoji */
+      if (m.thumb_url && m.thumb_url !== '') {
+        thumbHTML =
+          '<img class="card-thumb" src="' + m.thumb_url + '" alt="" ' +
+          'onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\';" />' +
+          '<div class="thumb-placeholder" style="display:none;">&#127916;</div>';
+      } else {
+        thumbHTML = '<div class="thumb-placeholder">&#127916;</div>';
+      }
+
+      /* Badge nam va so tap */
+      metaHTML = '';
+      if (m.year) metaHTML += '<span class="badge b-year">' + m.year + '</span>';
+      if (epCnt > 0) metaHTML += '<span class="badge b-eps">' + epCnt + ' tap</span>';
+
+      /* Tao HTML card */
+      html +=
+        '<div class="movie-card' + (isActive ? ' active' : '') + '" ' +
+          'id="card-' + i + '" ' +
+          'data-orig="' + item.origIndex + '" ' +
+          'data-listidx="' + i + '" ' +
+          'onclick="onCardClick(' + item.origIndex + ', ' + i + ')">' +
+          thumbHTML +
+          '<div class="card-body">' +
+            '<div class="card-name">' + (m.name || 'Khong ro ten') + '</div>' +
+            (m.origin_name ? '<div class="card-origin">' + m.origin_name + '</div>' : '') +
+            '<div class="card-meta">' + metaHTML + '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    DOM.movieList.innerHTML = html;
+
+    /* Dam bao nav.listFocusIdx nam trong gioi han sau khi re-render */
+    if (nav.listFocusIdx >= state.filteredList.length) {
+      nav.listFocusIdx = 0;
+    }
+
+    /* Ap dung focus neu dang o zone 'list' */
+    if (nav.zone === 'list' && state.filteredList.length > 0) {
+      applyListFocus(nav.listFocusIdx, false);
+    }
+  }
+
+  /* ===========================================================
+     RENDER CAC NUT TAP PHIM
+     Dung inline-block, KHONG dung CSS Grid
+     @param {Array} episodes - Mang tap phim tu MY_MOVIES[x].episodes
+     =========================================================== */
+  function renderEpisodes(episodes) {
+    var i, ep, html;
+
+    if (!episodes) episodes = [];
+    DOM.epCount.textContent = episodes.length + ' tap';
+
+    if (episodes.length === 0) {
+      DOM.episodeGrid.innerHTML = '<span style="color:#737373;font-size:13px;">Phim nay chua co tap nao.</span>';
+      return;
+    }
+
+    html = '';
+    for (i = 0; i < episodes.length; i++) {
+      ep = episodes[i];
+      html +=
+        '<button class="ep-btn" ' +
+          'id="ep-' + i + '" ' +
+          'onclick="onEpClick(' + i + ')">' +
+          (ep.name || ('Tap ' + (i + 1))) +
+        '</button>';
+    }
+
+    DOM.episodeGrid.innerHTML = html;
+  }
+
+  /* ===========================================================
+     XU LY CLICK CHON BO PHIM
+     Duoc goi khi: click chuot vao card HOAC nhan OK tren Remote
+     @param {number} origIndex - Index trong MY_MOVIES
+     @param {number} listIdx   - Index hien tai trong filteredList
+     =========================================================== */
+  function onCardClick(origIndex, listIdx) {
+    var movie, cards, i, episodes;
+
+    /* Neu da chon phim nay roi thi bo qua */
+    if (origIndex === state.activeMovieIndex) return;
+
+    state.activeMovieIndex = origIndex;
+    state.activeEpIndex = -1;
+
+    /* Cap nhat class 'active' cho cac card */
+    cards = DOM.movieList.querySelectorAll('.movie-card');
+    for (i = 0; i < cards.length; i++) {
+      removeClass(cards[i], 'active');
+      if (parseInt(cards[i].getAttribute('data-orig'), 10) === origIndex) {
+        addClass(cards[i], 'active');
+      }
+    }
+
+    movie = MY_MOVIES[origIndex];
+    if (!movie) return;
+
+    /* Hien thi thong tin phim */
+    DOM.npTitle.textContent = movie.name || 'Khong ro ten';
+    DOM.npEpisode.textContent = '';
+    DOM.infoPlaceholder.style.display = 'none';
+    DOM.movieDetail.style.display = 'block';
+
+    /* Ve danh sach tap */
+    episodes = movie.episodes || [];
+    renderEpisodes(episodes);
+
+    /* Cap nhat nav focus */
+    nav.listFocusIdx = (typeof listIdx === 'number') ? listIdx : nav.listFocusIdx;
+
+    /* Tu dong phat tap dau tien neu co */
+    if (episodes.length > 0) {
+      nav.epFocusIdx = 0;
+      onEpClick(0);
+    } else {
+      showToast('Phim nay chua co tap phim!');
+    }
+  }
+
+  /* ===========================================================
+     XU LY CLICK CHON TAP PHIM
+     Duoc goi khi: click chuot vao nut tap HOAC nhan OK tren Remote
+     @param {number} epIndex - Index tap trong MY_MOVIES[x].episodes
+     =========================================================== */
+  function onEpClick(epIndex) {
+    var movie, ep, btns, i, activeBtn;
+
+    if (state.activeMovieIndex === -1) {
+      showToast('Vui long chon bo phim truoc!');
+      return;
+    }
+
+    movie = MY_MOVIES[state.activeMovieIndex];
+    if (!movie || !movie.episodes || !movie.episodes[epIndex]) {
+      showToast('Khong tim thay tap phim nay!');
+      return;
+    }
+
+    ep = movie.episodes[epIndex];
+
+    /* Kiem tra link embed */
+    if (!ep.link_embed || ep.link_embed === '') {
+      showToast('Tap nay chua co link phat! Hay dan link_embed vao MY_MOVIES.');
+      return;
+    }
+
+    state.activeEpIndex = epIndex;
+    nav.epFocusIdx = epIndex;
+
+    /* Cap nhat class 'active' va 'tv-focus' cho cac nut tap */
+    btns = DOM.episodeGrid.querySelectorAll('.ep-btn');
+    for (i = 0; i < btns.length; i++) {
+      removeClass(btns[i], 'active');
+      removeClass(btns[i], 'tv-focus');
+    }
+
+    activeBtn = document.getElementById('ep-' + epIndex);
+    if (activeBtn) {
+      addClass(activeBtn, 'active');
+      /* Chi them tv-focus neu dang o zone episodes */
+      if (nav.zone === 'episodes') {
+        addClass(activeBtn, 'tv-focus');
+      }
+    }
+
+    /* Cap nhat thong tin dang phat */
+    DOM.npEpisode.textContent = 'Dang phat: ' + (ep.name || ('Tap ' + (epIndex + 1)));
+
+    /*
+      QUAN TRONG: Dat src cho iframe.
+      Trinh duyet tu dong tai trang phim trong iframe.
+      Khong can HLS.js, khong can CORS proxy, hoat dong tren moi TV.
+    */
+    DOM.iframePlayer.src = ep.link_embed;
+    DOM.iframePlayer.style.display = 'block';
+    DOM.placeholder.style.display = 'none';
+
+    /* Cuon infoPanel ve dau */
+    DOM.infoPanel.scrollTop = 0;
+  }
+
+  /* ===========================================================
+     HE THONG DIEU HUONG REMOTE TV
+     Xu ly phim mui ten va cac nut dac biet tren Remote
+
+     Ma phim chuan:
+       37 = Trai (Left)    38 = Len (Up)
+       39 = Phai (Right)   40 = Xuong (Down)
+       13 = OK / Enter
+        8 = Back (trinh duyet)
+      461 = Back (LG webOS)
+    10009 = Back (Samsung Tizen)
+     =========================================================== */
+
+  /**
+   * Ap dung highlight focus TV vao card phim trong danh sach.
+   * Dong thoi tu dong cuon sidebar de card hien thi trong tam nhin.
+   * @param {number} idx      - Index card trong filteredList
+   * @param {boolean} doScroll - Co cuon sidebar khong? (mac dinh: true)
+   */
+  function applyListFocus(idx, doScroll) {
+    var cards, targetCard, sidebar, cardTop, cardH, sTop, sH;
+
+    if (doScroll === undefined) doScroll = true;
+
+    /* Xoa focus cu khoi tat ca card */
+    cards = DOM.movieList.querySelectorAll('.movie-card');
+    for (var i = 0; i < cards.length; i++) {
+      removeClass(cards[i], 'tv-focus');
+    }
+
+    /* Ap dung focus moi */
+    targetCard = document.getElementById('card-' + idx);
+    if (!targetCard) return;
+
+    addClass(targetCard, 'tv-focus');
+    nav.listFocusIdx = idx;
+
+    /* Cuon sidebar de card focus nam trong tam nhin */
+    if (doScroll) {
+      sidebar = DOM.sidebar;
+      cardTop = targetCard.offsetTop;
+      cardH   = targetCard.offsetHeight;
+      sTop    = sidebar.scrollTop;
+      sH      = sidebar.offsetHeight;
+
+      if (cardTop < sTop + 10) {
+        sidebar.scrollTop = cardTop - 10;
+      } else if (cardTop + cardH > sTop + sH - 10) {
+        sidebar.scrollTop = cardTop + cardH - sH + 10;
+      }
+    }
+  }
+
+  /**
+   * Ap dung highlight focus TV vao nut tap phim.
+   * Dong thoi cuon infoPanel de nut hien thi trong tam nhin.
+   * @param {number} idx - Index nut tap
+   */
+  function applyEpFocus(idx) {
+    var btns, targetBtn, panel, btnTop, btnH, sTop, sH;
+
+    /* Xoa focus cu */
+    btns = DOM.episodeGrid.querySelectorAll('.ep-btn');
+    for (var i = 0; i < btns.length; i++) {
+      removeClass(btns[i], 'tv-focus');
+    }
+
+    /* Ap dung focus moi */
+    targetBtn = document.getElementById('ep-' + idx);
+    if (!targetBtn) return;
+
+    addClass(targetBtn, 'tv-focus');
+    nav.epFocusIdx = idx;
+
+    /* Cuon infoPanel de nut focus hien thi */
+    panel  = DOM.infoPanel;
+    btnTop = targetBtn.offsetTop;
+    btnH   = targetBtn.offsetHeight;
+    sTop   = panel.scrollTop;
+    sH     = panel.offsetHeight;
+
+    if (btnTop < sTop + 5) {
+      panel.scrollTop = btnTop - 5;
+    } else if (btnTop + btnH > sTop + sH - 5) {
+      panel.scrollTop = btnTop + btnH - sH + 5;
+    }
+  }
+
+  /**
+   * Ham chinh xu ly phim bam tren Remote TV.
+   * Duoc dang ky vao document.onkeydown.
+   */
+  function onKeyDown(e) {
+    var key = e.keyCode || e.which;
+    var listLen = state.filteredList.length;
+    var item, movie, episodes, epLen, newIdx, cards, btns, i;
+
+    /* Xac dinh loai phim bam */
+    var isEnter = (key === 13);
+    var isUp    = (key === 38);
+    var isDown  = (key === 40);
+    var isLeft  = (key === 37);
+    var isRight = (key === 39);
+    var isBack  = (key === 8 || key === 461 || key === 10009 || key === 27);
+
+    /* Bo qua neu dang focus vao o tim kiem
+       Nut Escape / Back se thoat khoi o tim kiem */
+    if (document.activeElement === DOM.searchInput) {
+      if (isBack) {
+        DOM.searchInput.blur();
+        if (nav.zone === 'list' && listLen > 0) {
+          applyListFocus(nav.listFocusIdx);
+        }
+      }
+      return; /* De input xu ly cac phim con lai */
+    }
+
+    /* Neu khong phai phim dieu huong thi bo qua */
+    if (!isEnter && !isUp && !isDown && !isLeft && !isRight && !isBack) return;
+
+    /* Ngan trinh duyet tu dong scroll trang */
+    if (e.preventDefault) e.preventDefault();
+    if (e.stopPropagation) e.stopPropagation();
+
+    /* ========================================================
+       DIEU HUONG TRONG VUNG DANH SACH PHIM (zone = 'list')
+       ======================================================== */
+    if (nav.zone === 'list') {
+
+      if (isUp) {
+        if (listLen === 0) return;
+        newIdx = nav.listFocusIdx - 1;
+        if (newIdx < 0) newIdx = 0;
+        applyListFocus(newIdx);
+
+      } else if (isDown) {
+        if (listLen === 0) return;
+        newIdx = nav.listFocusIdx + 1;
+        if (newIdx >= listLen) newIdx = listLen - 1;
+        applyListFocus(newIdx);
+
+      } else if (isRight) {
+        /* Chuyen sang zone episodes neu phim da duoc chon va co tap */
+        if (state.activeMovieIndex !== -1) {
+          movie = MY_MOVIES[state.activeMovieIndex];
+          if (movie && movie.episodes && movie.episodes.length > 0) {
+            nav.zone = 'episodes';
+            updateZoneLabel('episodes');
+
+            /* Xoa focus khoi danh sach */
+            cards = DOM.movieList.querySelectorAll('.movie-card');
+            for (i = 0; i < cards.length; i++) { removeClass(cards[i], 'tv-focus'); }
+
+            applyEpFocus(nav.epFocusIdx);
+            showToast('Chon tap phim - Nhan OK de phat', 2000);
+          } else {
+            showToast('Phim nay chua co tap phim');
+          }
+        } else {
+          showToast('Hay chon mot bo phim truoc (nhan OK)');
+        }
+
+      } else if (isEnter) {
+        /* Chon phim dang focus */
+        if (listLen === 0) return;
+        item = state.filteredList[nav.listFocusIdx];
+        if (!item) return;
+        onCardClick(item.origIndex, nav.listFocusIdx);
+
+        /* Sau khi chon phim, tu dong chuyen sang zone episodes */
+        movie = MY_MOVIES[item.origIndex];
+        if (movie && movie.episodes && movie.episodes.length > 0) {
+          nav.zone = 'episodes';
+          updateZoneLabel('episodes');
+
+          cards = DOM.movieList.querySelectorAll('.movie-card');
+          for (i = 0; i < cards.length; i++) { removeClass(cards[i], 'tv-focus'); }
+
+          /* Dat timeout ngan de cho DOM cap nhat xong (renderEpisodes) */
+          setTimeout(function() {
+            nav.epFocusIdx = 0;
+            applyEpFocus(0);
+          }, 60);
+        }
+      }
+      /* Left va Back o zone 'list' khong lam gi */
+    }
+
+    /* ========================================================
+       DIEU HUONG TRONG VUNG TAP PHIM (zone = 'episodes')
+       ======================================================== */
+    else if (nav.zone === 'episodes') {
+
+      movie = (state.activeMovieIndex !== -1) ? MY_MOVIES[state.activeMovieIndex] : null;
+      episodes = (movie && movie.episodes) ? movie.episodes : [];
+      epLen = episodes.length;
+
+      if (isLeft || isUp) {
+        if (nav.epFocusIdx > 0) {
+          /* Di chuyen sang tap truoc */
+          applyEpFocus(nav.epFocusIdx - 1);
+        } else {
+          /* Da o tap dau tien: quay ve danh sach phim */
+          nav.zone = 'list';
+          updateZoneLabel('list');
+
+          btns = DOM.episodeGrid.querySelectorAll('.ep-btn');
+          for (i = 0; i < btns.length; i++) { removeClass(btns[i], 'tv-focus'); }
+
+          applyListFocus(nav.listFocusIdx);
+          showToast('Quay lai danh sach phim', 1800);
+        }
+
+      } else if (isRight || isDown) {
+        if (nav.epFocusIdx < epLen - 1) {
+          /* Di chuyen sang tap sau */
+          applyEpFocus(nav.epFocusIdx + 1);
+        }
+
+      } else if (isEnter) {
+        /* Phat tap dang focus */
+        onEpClick(nav.epFocusIdx);
+
+      } else if (isBack) {
+        /* Phim Back: quay ve danh sach phim */
+        nav.zone = 'list';
+        updateZoneLabel('list');
+
+        btns = DOM.episodeGrid.querySelectorAll('.ep-btn');
+        for (i = 0; i < btns.length; i++) { removeClass(btns[i], 'tv-focus'); }
+
+        applyListFocus(nav.listFocusIdx);
+        showToast('Quay lai danh sach phim', 1800);
+      }
+    }
+  }
+
+  /* ===========================================================
+     TIM KIEM - LOC DANH SACH CLIENT-SIDE
+     Khong goi API, loc truc tiep tren MY_MOVIES
+     =========================================================== */
+  var _searchTimer = null;
+
+  function onSearchInput() {
+    var val = DOM.searchInput.value || '';
+    DOM.btnClear.style.display = val ? 'block' : 'none';
+
+    /* Debounce 280ms de khong render lien tuc khi go nhanh */
+    clearTimeout(_searchTimer);
+    _searchTimer = setTimeout(function() {
+      state.searchQuery = val.toLowerCase ? val.toLowerCase() : val;
+      nav.listFocusIdx = 0;
+      renderList(state.searchQuery);
+    }, 280);
+  }
+
+  function clearSearch() {
+    DOM.searchInput.value = '';
+    DOM.btnClear.style.display = 'none';
+    state.searchQuery = '';
+    nav.listFocusIdx = 0;
+    renderList('');
+    DOM.searchInput.blur();
+  }
+
+  /* ===========================================================
+     FETCH DU LIEU PHIM TU API NGUONC
+     Su dung XMLHttpRequest ES5 - KHONG dung fetch() / Promise
+     Moi slug duoc goi trong mot request rieng biet.
+     Sau khi tat ca hoan thanh (thanh cong hoac that bai),
+     mang MY_MOVIES se duoc sap xep lai va render.
+     =========================================================== */
+
+  /**
+   * Hien thi trang thai dang tai trong sidebar.
+   * @param {number} loaded - So phim da tai xong
+   * @param {number} total  - Tong so phim can tai
+   */
+  function showLoadingState(loaded, total) {
+    DOM.sbTitle.textContent = 'Dang tai danh sach...';
+    DOM.listCount.textContent = loaded + '/' + total;
+    DOM.movieList.innerHTML =
+      '<div class="state-box">' +
+        '<div class="emo">&#9654;</div>' +
+        '<div class="ttl">Dang tai phim...</div>' +
+        '<div class="sub">Dang lay du lieu tu NguonC (' + loaded + '/' + total + ' phim)</div>' +
+      '</div>';
+  }
+
+  /**
+   * Goi API lay thong tin mot phim theo slug.
+   * Dung XMLHttpRequest de tuong thich ES5 / TV cu.
+   * @param {string}   slug     - Slug phim tren NguonC
+   * @param {number}   slugIdx  - Vi tri slug trong MY_FAVORITE_SLUGS (de giu thu tu)
+   * @param {Function} callback - Ham goi lai khi hoan thanh: callback(movieObj hoac null)
+   */
+  function fetchOneFilm(slug, slugIdx, callback) {
+    var xhr, url;
+    url = 'https://phim.nguonc.com/api/film/' + slug;
+
+    /* Tao XHR - tuong thich IE cua Smart TV cu */
+    if (window.XMLHttpRequest) {
+      xhr = new XMLHttpRequest();
+    } else if (window.ActiveXObject) {
+      /* IE6 fallback - rat hiem tren TV nhung cu the */
+      try { xhr = new window.ActiveXObject('Msxml2.XMLHTTP'); }
+      catch (e1) {
+        try { xhr = new window.ActiveXObject('Microsoft.XMLHTTP'); }
+        catch (e2) { callback(null, slugIdx); return; }
+      }
+    } else {
+      callback(null, slugIdx);
+      return;
+    }
+
+    xhr.onreadystatechange = function() {
+      var data, film, episodes, items, i, ep;
+      if (xhr.readyState !== 4) return;
+
+      if (xhr.status === 200) {
+        try {
+          data = JSON.parse(xhr.responseText);
+
+          /* Cau truc API NguonC:
+             data.movie.name, data.movie.original_name,
+             data.movie.thumb_url, data.movie.year,
+             data.episodes[0].items[] => { name, embed }
+          */
+          film = data.movie || data.film || data;
+
+          /* Giai ma danh sach tap tu episodes[0].items */
+          episodes = [];
+          if (data.episodes && data.episodes.length > 0 &&
+              data.episodes[0].items && data.episodes[0].items.length > 0) {
+            items = data.episodes[0].items;
+            for (i = 0; i < items.length; i++) {
+              ep = items[i];
+              episodes.push({
+                name:       ep.name       || ('Tap ' + (i + 1)),
+                link_embed: ep.embed      || ep.link_embed || ''
+              });
+            }
+          }
+
+          /* Tao doi tuong phim theo cau truc MY_MOVIES */
+          callback({
+            name:        film.name          || slug,
+            origin_name: film.original_name || film.origin_name || '',
+            year:        film.year          ? String(film.year) : '',
+            thumb_url:   film.thumb_url     || film.poster_url  || '',
+            slug:        slug,
+            episodes:    episodes
+          }, slugIdx);
+
+        } catch (parseErr) {
+          /* JSON khong hop le */
+          if (window.console && console.warn) {
+            console.warn('CinemaX: Loi parse JSON cho slug "' + slug + '":', parseErr);
+          }
+          callback(null, slugIdx);
+        }
+      } else {
+        /* HTTP error (404, 500, ...) */
+        if (window.console && console.warn) {
+          console.warn('CinemaX: API tra ve HTTP ' + xhr.status + ' cho slug "' + slug + '"');
+        }
+        callback(null, slugIdx);
+      }
+    };
+
+    /* Xu ly loi mang (timeout, offline, ...) */
+    xhr.onerror = function() {
+      if (window.console && console.warn) {
+        console.warn('CinemaX: Loi mang khi fetch slug "' + slug + '"');
+      }
+      callback(null, slugIdx);
+    };
+
+    /* Dat timeout 15 giay - TV doi khi mang cham */
+    xhr.timeout = 15000;
+    xhr.ontimeout = function() {
+      if (window.console && console.warn) {
+        console.warn('CinemaX: Timeout khi fetch slug "' + slug + '"');
+      }
+      callback(null, slugIdx);
+    };
+
+    xhr.open('GET', url, true);
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.send();
+  }
+
+  /**
+   * Duyet qua tat ca slug trong MY_FAVORITE_SLUGS,
+   * goi API song song, gom ket qua va render khi xong.
+   */
+  function fetchAllMovies() {
+    var i, total;
+    total = MY_FAVORITE_SLUGS.length;
+
+    /* Kiem tra neu danh sach slug trong */
+    if (total === 0) {
+      MY_MOVIES = [];
+      renderList('');
+      showToast('Chua co slug nao trong MY_FAVORITE_SLUGS!', 4000);
+      return;
+    }
+
+    /* Khoi tao mang ket qua giu thu tu theo slugIdx */
+    var results = [];
+    for (i = 0; i < total; i++) results[i] = null;
+
+    state.totalSlugs  = total;
+    state.loadedCount = 0;
+    showLoadingState(0, total);
+
+    /* Ham xu ly khi moi fetch hoan thanh (thanh cong hoac that bai) */
+    function onOneFetchDone(movieObj, slugIdx) {
+      state.loadedCount += 1;
+
+      if (movieObj !== null) {
+        results[slugIdx] = movieObj;
+      }
+
+      /* Cap nhat trang thai dang tai */
+      showLoadingState(state.loadedCount, total);
+
+      /* Khi tat ca slug da xong */
+      if (state.loadedCount === total) {
+        /* Gom cac phim thanh cong (loai bo null), giu thu tu slug goc */
+        MY_MOVIES = [];
+        for (var j = 0; j < results.length; j++) {
+          if (results[j] !== null) {
+            MY_MOVIES.push(results[j]);
+          }
+        }
+
+        /* Render danh sach */
+        renderList(state.searchQuery);
+
+        /* Ap dung focus ban dau */
+        setTimeout(function() {
+          if (state.filteredList.length > 0) {
+            applyListFocus(0);
+          }
+          updateZoneLabel('list');
+        }, 120);
+
+        /* Thong bao ket qua */
+        var okCount = MY_MOVIES.length;
+        var failCount = total - okCount;
+        if (okCount > 0 && failCount === 0) {
+          showToast('Da tai ' + okCount + ' phim thanh cong!', 2500);
+        } else if (okCount > 0 && failCount > 0) {
+          showToast('Da tai ' + okCount + '/' + total + ' phim. ' + failCount + ' phim loi.', 3500);
+        } else {
+          showToast('Khong the tai phim. Kiem tra ket noi mang!', 4000);
+        }
+
+        if (window.console && console.log) {
+          console.log('CinemaX: Hoan thanh fetch. ' + okCount + '/' + total + ' phim OK.');
+        }
+      }
+    }
+
+    /* Bat dau fetch song song tat ca slug */
+    for (i = 0; i < total; i++) {
+      /* Dung IIFE de dong bang bien slug va slugIdx trong vong lap ES5 */
+      (function(slug, idx) {
+        fetchOneFilm(slug, idx, onOneFetchDone);
+      }(MY_FAVORITE_SLUGS[i], i));
+    }
+  }
+
+  /* ===========================================================
+     KHOI TAO UNG DUNG
+     Duoc goi mot lan khi DOMContentLoaded
+     =========================================================== */
+  function init() {
+    /* 1. Tinh toan va dat layout bang JS */
+    setLayout();
+    window.onresize = setLayout; /* TV hiem khi resize nhung cu the */
+
+    /* 2. Dang ky su kien cho thanh tim kiem */
+    if (DOM.searchInput.addEventListener) {
+      DOM.searchInput.addEventListener('input', onSearchInput, false);
+      DOM.searchInput.addEventListener('focus', function() {
+        /* Khi vao o tim kiem: xoa focus TV khoi cac phan tu khac */
+        var cards = DOM.movieList.querySelectorAll('.movie-card');
+        for (var i = 0; i < cards.length; i++) { removeClass(cards[i], 'tv-focus'); }
+        var btns = DOM.episodeGrid.querySelectorAll('.ep-btn');
+        for (var j = 0; j < btns.length; j++) { removeClass(btns[j], 'tv-focus'); }
+      }, false);
+    } else {
+      /* Fallback cho trinh duyet rat cu (IE8 kieu cu) */
+      DOM.searchInput.onkeyup = onSearchInput;
+    }
+
+    if (DOM.btnClear.addEventListener) {
+      DOM.btnClear.addEventListener('click', clearSearch, false);
+    } else {
+      DOM.btnClear.onclick = clearSearch;
+    }
+
+    /* 3. Dang ky xu ly phim Remote TV */
+    if (document.addEventListener) {
+      document.addEventListener('keydown', onKeyDown, false);
+    } else if (document.attachEvent) {
+      /* Fallback cho trinh duyet rat cu */
+      document.attachEvent('onkeydown', onKeyDown);
+    }
+
+    /* 4. Dang ky phim dac biet cho Samsung Tizen */
+    try {
+      if (window.tizen && window.tizen.tvinputdevice) {
+        window.tizen.tvinputdevice.registerKey('ColorF0Red');
+        window.tizen.tvinputdevice.registerKey('ColorF1Green');
+        window.tizen.tvinputdevice.registerKey('MediaPlayPause');
+      }
+    } catch (err) {
+      /* Khong phai Tizen - bo qua loi nay */
+    }
+
+    /* 5. Bat dau fetch du lieu phim tu API NguonC */
+    fetchAllMovies();
+
+    /* Log cho developer */
+    if (window.console && console.log) {
+      console.log('CinemaX (ES5 / Smart TV Mode) da khoi dong!');
+      console.log('Bat dau fetch ' + MY_FAVORITE_SLUGS.length + ' slug tu NguonC API...');
+    }
+  }
+
+  /* Chay init khi DOM da san sang - tuong thich ca trinh duyet cu */
+  if (document.addEventListener) {
+    document.addEventListener('DOMContentLoaded', init, false);
+  } else if (document.attachEvent) {
+    document.attachEvent('onreadystatechange', function() {
+      if (document.readyState === 'complete') init();
+    });
+  } else {
+    window.onload = init;
+  }
+
+</script>
+</body>
+</html>
